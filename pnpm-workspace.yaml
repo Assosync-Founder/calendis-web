@@ -1,0 +1,7 @@
+allowBuilds:
+  sharp: false
+  unrs-resolver: false
+
+minimumReleaseAgeExclude:
+  - '@assosync/contracts@1.0.0'
+  - '@assosync/components-react@3.3.8'
