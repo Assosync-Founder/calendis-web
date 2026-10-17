@@ -33,14 +33,10 @@ export const GET = async (
 	)?.value;
 	const code =
 		storedCode === authConfig.flashCodes.passkeyAuthenticationFailed ||
-		storedCode ===
-		authConfig.flashCodes.emailCodeRateLimited15Minutes ||
-		storedCode ===
-		authConfig.flashCodes.emailCodeRateLimited1Hour ||
-		storedCode ===
-		authConfig.flashCodes.emailCodeRateLimited6Hours ||
-		storedCode ===
-		authConfig.flashCodes.emailCodeRateLimited24Hours ||
+		storedCode === authConfig.flashCodes.emailCodeRateLimited15Minutes ||
+		storedCode === authConfig.flashCodes.emailCodeRateLimited1Hour ||
+		storedCode === authConfig.flashCodes.emailCodeRateLimited6Hours ||
+		storedCode === authConfig.flashCodes.emailCodeRateLimited24Hours ||
 		storedCode === authConfig.flashCodes.authenticationFailed
 			? storedCode
 			: null;
