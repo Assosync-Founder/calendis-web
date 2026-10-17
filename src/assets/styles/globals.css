@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "@assosync/theme/calendis.css";
+
+body {
+	@apply bg-background;
+}
