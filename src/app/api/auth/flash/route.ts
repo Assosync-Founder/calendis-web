@@ -32,6 +32,7 @@ export const GET = async (
 		authConfig.cookieNames.flash
 	)?.value;
 	const code =
+		storedCode === authConfig.flashCodes.passkeyAuthenticationCancelled ||
 		storedCode === authConfig.flashCodes.passkeyAuthenticationFailed ||
 		storedCode === authConfig.flashCodes.emailCodeRateLimited15Minutes ||
 		storedCode === authConfig.flashCodes.emailCodeRateLimited1Hour ||

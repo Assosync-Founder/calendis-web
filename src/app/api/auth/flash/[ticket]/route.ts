@@ -28,6 +28,7 @@ const isSupportedFlashCode = (
 	value: string
 ): boolean => {
 	return (
+		value === authConfig.flashCodes.passkeyAuthenticationCancelled ||
 		value === authConfig.flashCodes.passkeyAuthenticationFailed ||
 		value === authConfig.flashCodes.emailCodeRateLimited15Minutes ||
 		value === authConfig.flashCodes.emailCodeRateLimited1Hour ||

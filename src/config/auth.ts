@@ -4,6 +4,7 @@ const authConfig = {
 		flash: 'c_flh'
 	},
 	flashCodes: {
+		passkeyAuthenticationCancelled: 'passkey_authentication_cancelled',
 		passkeyAuthenticationFailed: 'passkey_authentication_failed',
 		emailCodeRateLimited15Minutes: 'email_code_rate_limited_15_minutes',
 		emailCodeRateLimited1Hour: 'email_code_rate_limited_1_hour',

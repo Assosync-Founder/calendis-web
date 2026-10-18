@@ -22,6 +22,25 @@ const createHashValue = (
 		.digest('base64url');
 };
 
+/** Reads a stable public error code from an upstream response payload.
+ * @param value - Unknown upstream response payload.
+ * @returns Public error code when one is available.
+ */
+const readUpstreamErrorCode = (
+	value: unknown
+): string | null => {
+	if (
+		typeof value !== 'object' ||
+		value === null ||
+		!('error' in value) ||
+		typeof value.error !== 'string'
+	) {
+		return null;
+	}
+
+	return value.error;
+};
+
 export const POST = async (
 	request: NextRequest
 ): Promise<Response> => {
@@ -86,15 +105,22 @@ export const POST = async (
 			})
 		}
 	);
+	const identityResult: unknown = await identityResponse.json();
 
 	if (!identityResponse.ok) {
+		console.error(JSON.stringify({
+			event: 'web_identity_upstream_failure',
+			upstreamStatus: identityResponse.status,
+			upstreamError: readUpstreamErrorCode(identityResult),
+			upstreamRequestId:
+				identityResponse.headers.get('x-request-id')
+		}));
+
 		return NextResponse.json(
 			{ error: 'authentication_failed' },
 			{ status: 401 }
 		);
 	}
-
-	const identityResult: unknown = await identityResponse.json();
 
 	if (
 		typeof identityResult !== 'object' ||

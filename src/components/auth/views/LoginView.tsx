@@ -32,6 +32,17 @@ const LoginView = () => {
 
 				if (
 					result.code ===
+						authConfig.flashCodes.passkeyAuthenticationCancelled
+				) {
+					setError(
+						'Connexion annulée.'
+					);
+
+					return;
+				}
+
+				if (
+					result.code ===
 					authConfig.flashCodes.passkeyAuthenticationFailed
 				) {
 					setError(
