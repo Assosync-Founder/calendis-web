@@ -53,7 +53,8 @@ const Env = {
 		webSso: {
 			authAccountUrl: process.env.AUTH_ACCOUNT_URL,
 			authWebClientSecret: process.env.AUTH_WEB_CLIENT_SECRET,
-			authWebCalendisRedirectUri: process.env.AUTH_WEB_CALENDIS_REDIRECT_URI
+			authWebCalendisRedirectUri: process.env.AUTH_WEB_CALENDIS_REDIRECT_URI,
+			authAccountVercelBypassSecret: process.env.AUTH_ACCOUNT_VERCEL_BYPASS_SECRET
 		},
 		upstashRedis: {
 			restUrl: process.env.UPSTASH_REDIS_REST_URL,

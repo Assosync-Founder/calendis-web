@@ -79,7 +79,7 @@ export const POST = async (
 	};
 
 	await redis.set(
-		`auth:web:transactions:${createHashValue(transactionId)}`,
+		`auth:web:transactions:${ createHashValue(transactionId) }`,
 		JSON.stringify(transaction),
 		{
 			px: 10 * 60_000,
@@ -87,13 +87,19 @@ export const POST = async (
 		}
 	);
 
+	const headers: HeadersInit = {
+		'Content-Type': 'application/json'
+	};
+
+	if (Env.public.environment === 'preview' && Env.private.webSso.authAccountVercelBypassSecret) {
+		headers['x-vercel-protection-bypass'] = Env.private.webSso.authAccountVercelBypassSecret;
+	}
+
 	const identityResponse = await fetch(
-		`${endpoints.accountUrl}/api/auth/web/identity`,
+		`${ endpoints.accountUrl }/api/auth/web/identity`,
 		{
 			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
+			headers,
 			cache: 'no-store',
 			body: JSON.stringify({
 				clientId: 'calendis',

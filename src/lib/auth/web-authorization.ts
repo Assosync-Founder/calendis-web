@@ -62,11 +62,19 @@ const startPasskeyWebAuthorization = async (
 		{ px: 10 * 60_000, nx: true }
 	);
 
+	const headers: HeadersInit = {
+		'Content-Type': 'application/json'
+	};
+
+	if (Env.public.environment === 'preview' && Env.private.webSso.authAccountVercelBypassSecret) {
+		headers['x-vercel-protection-bypass'] = Env.private.webSso.authAccountVercelBypassSecret;
+	}
+
 	const response = await fetch(
 		`${endpoints.accountUrl}/api/auth/passkeys/web/identity`,
 		{
 			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
+			headers,
 			cache: 'no-store',
 			body: JSON.stringify({
 				clientId: 'calendis',

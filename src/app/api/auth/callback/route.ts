@@ -114,13 +114,19 @@ export const GET = async (
 			return failureResponse();
 		}
 
+		const headers: HeadersInit = {
+			'Content-Type': 'application/json'
+		};
+
+		if (Env.public.environment === 'preview' && Env.private.webSso.authAccountVercelBypassSecret) {
+			headers['x-vercel-protection-bypass'] = Env.private.webSso.authAccountVercelBypassSecret;
+		}
+
 		const tokenResponse = await fetch(
 			`${endpoints.accountUrl}/api/auth/web/token`,
 			{
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
+				headers,
 				cache: 'no-store',
 				body: JSON.stringify({
 					clientId: 'calendis',
