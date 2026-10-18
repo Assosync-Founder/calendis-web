@@ -7,10 +7,7 @@ import Env from '@/config/env';
 import createAuthenticationFailureResponse from '@/lib/auth/auth-failure';
 import resolveWebSsoEndpoints from '@/lib/auth/web-sso-origin';
 import redis from '@/services/redis/redis.server';
-import type {
-	WebAuthenticationTransaction,
-	WebSessionResponse
-} from '@/types/auth';
+import type { WebAuthenticationTransaction, WebSessionResponse } from '@/types/auth';
 
 /** Creates a SHA-256 digest suitable for a Redis key. */
 const createHashValue = (value: string): string => {
@@ -20,16 +17,12 @@ const createHashValue = (value: string): string => {
 };
 
 /** Checks whether a value is a plain record. */
-const isRecord = (
-	value: unknown
-): value is Record<string, unknown> => {
+const isRecord = (value: unknown): value is Record<string, unknown> => {
 	return typeof value === 'object' && value !== null;
 };
 
 /** Validates a temporary product SSO transaction read from Redis. */
-const isWebAuthenticationTransaction = (
-	value: unknown
-): value is WebAuthenticationTransaction => {
+const isWebAuthenticationTransaction = (value: unknown): value is WebAuthenticationTransaction => {
 	if (!isRecord(value)) {
 		return false;
 	}
@@ -43,9 +36,7 @@ const isWebAuthenticationTransaction = (
 };
 
 /** Validates the session returned by Assosync Account. */
-const isWebSessionResponse = (
-	value: unknown
-): value is WebSessionResponse => {
+const isWebSessionResponse = (value: unknown): value is WebSessionResponse => {
 	if (!isRecord(value)) {
 		return false;
 	}
@@ -58,10 +49,7 @@ const isWebSessionResponse = (
 };
 
 /** Creates an internal Calendis URL from a safe relative pathname. */
-const createAppUrl = (
-	appUrl: string,
-	pathname: string
-): URL | null => {
+const createAppUrl = (appUrl: string, pathname: string): URL | null => {
 	if (!pathname.startsWith('/') || pathname.startsWith('//')) {
 		return null;
 	}
@@ -74,37 +62,25 @@ const createAppUrl = (
 };
 
 /** Exchanges an Assosync authorization for a local Calendis session. */
-export const GET = async (
-	request: NextRequest
-): Promise<Response> => {
+export const GET = async (request: NextRequest): Promise<Response> => {
 	const endpoints = resolveWebSsoEndpoints(request);
 
 	if (!endpoints) {
-		return NextResponse.json(
-			{ error: 'authentication_failed' },
-			{ status: 400 }
-		);
+		return NextResponse.json({ error: 'authentication_failed' }, { status: 400 });
 	}
 
 	const failureResponse = (): Promise<Response> => {
-		return createAuthenticationFailureResponse(
-			authConfig.flashCodes.authenticationFailed,
-			endpoints
-		);
+		return createAuthenticationFailureResponse(authConfig.flashCodes.authenticationFailed, endpoints);
 	};
 	const cookieStore = await cookies();
-	const transactionId = cookieStore.get(
-		authCookieNames.webAuthorization
-	)?.value;
+	const transactionId = cookieStore.get(authCookieNames.webAuthorization)?.value;
 
 	if (!transactionId) {
 		return failureResponse();
 	}
 
 	try {
-		const transactionValue = await redis.getdel<unknown>(
-			`auth:web:transactions:${createHashValue(transactionId)}`
-		);
+		const transactionValue = await redis.getdel<unknown>(`auth:web:transactions:${createHashValue(transactionId)}`);
 
 		if (!isWebAuthenticationTransaction(transactionValue)) {
 			return failureResponse();
@@ -130,8 +106,7 @@ export const GET = async (
 				cache: 'no-store',
 				body: JSON.stringify({
 					clientId: 'calendis',
-					clientSecret:
-					Env.private.webSso.authWebClientSecret,
+					clientSecret: Env.private.webSso.authWebClientSecret,
 					codeVerifier: transactionValue.codeVerifier,
 					state: transactionValue.state,
 					redirectUri: transactionValue.redirectUri
@@ -155,10 +130,7 @@ export const GET = async (
 			return failureResponse();
 		}
 
-		const destination = createAppUrl(
-			endpoints.appUrl,
-			transactionValue.returnTo
-		);
+		const destination = createAppUrl(endpoints.appUrl, transactionValue.returnTo);
 
 		if (!destination) {
 			return failureResponse();
@@ -186,17 +158,13 @@ export const GET = async (
 			expires
 		});
 
-		cookieStore.delete(
-			authCookieNames.webAuthorization
-		);
+		cookieStore.delete(authCookieNames.webAuthorization);
 
 		return response;
 	} catch (error: unknown) {
 		console.error(JSON.stringify({
 			event: 'authentication_callback_failure',
-			errorName: error instanceof Error
-				? error.name
-				: 'UnknownError'
+			errorName: error instanceof Error ? error.name: 'UnknownError'
 		}));
 
 		return failureResponse();

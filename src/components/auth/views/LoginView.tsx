@@ -1,16 +1,18 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import {
-	inMemoryPersistence,
-	setPersistence,
-	signInWithEmailAndPassword
-} from 'firebase/auth';
+import { startAuthentication } from '@simplewebauthn/browser';
+import type { AuthenticationResponseJSON, PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/browser';
+import { inMemoryPersistence, setPersistence, signInWithCustomToken, signInWithEmailAndPassword } from 'firebase/auth';
 import authConfig from '@/config/auth';
 import firebaseClient from '@/services/firebase/firebase-client';
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
 	return typeof value === 'object' && value !== null;
+};
+
+const isPasskeyOptions = (value: unknown): value is PublicKeyCredentialRequestOptionsJSON => {
+	return isRecord(value) && typeof value.challenge === 'string';
 };
 
 const LoginView = () => {
@@ -21,95 +23,56 @@ const LoginView = () => {
 	useEffect(() => {
 		const consumeFlashMessage = async (): Promise<void> => {
 			try {
-				const response = await fetch('/api/auth/flash', {
-					cache: 'no-store'
-				});
+				const response = await fetch('/api/auth/flash', { cache: 'no-store' });
 				const result: unknown = await response.json();
 
 				if (!response.ok || !isRecord(result)) {
 					return;
 				}
 
-				if (
-					result.code ===
-						authConfig.flashCodes.passkeyAuthenticationCancelled
-				) {
-					setError(
-						'Connexion annulée.'
-					);
+				if (result.code === authConfig.flashCodes.passkeyAuthenticationCancelled) {
+					setError('Connexion annulée.');
 
 					return;
 				}
 
-				if (
-					result.code ===
-					authConfig.flashCodes.passkeyAuthenticationFailed
-				) {
-					setError(
-						'Impossible de vous connecter avec cette clé d’accès.'
-					);
+				if (result.code === authConfig.flashCodes.passkeyAuthenticationFailed) {
+					setError('Impossible de vous connecter avec cette clé d’accès.');
 
 					return;
 				}
 
-				if (
-					result.code ===
-					authConfig.flashCodes.emailCodeRateLimited15Minutes
-				) {
-					setError(
-						'Trop de codes de vérification ont été demandés par e-mail. Réessayez dans 15 minutes.'
-					);
+				if (result.code === authConfig.flashCodes.emailCodeRateLimited15Minutes) {
+					setError('Trop de codes de vérification ont été demandés par e-mail. Réessayez dans 15 minutes.');
 
 					return;
 				}
 
-				if (
-					result.code ===
-					authConfig.flashCodes.emailCodeRateLimited1Hour
-				) {
-					setError(
-						'Trop de codes de vérification ont été demandés par e-mail. Réessayez dans 1 heure.'
-					);
+				if (result.code === authConfig.flashCodes.emailCodeRateLimited1Hour) {
+					setError('Trop de codes de vérification ont été demandés par e-mail. Réessayez dans 1 heure.');
 
 					return;
 				}
 
-				if (
-					result.code ===
-					authConfig.flashCodes.emailCodeRateLimited6Hours
-				) {
-					setError(
-						'Trop de codes de vérification ont été demandés par e-mail. Réessayez dans 6 heures.'
-					);
+				if (result.code === authConfig.flashCodes.emailCodeRateLimited6Hours) {
+					setError('Trop de codes de vérification ont été demandés par e-mail. Réessayez dans 6 heures.');
 
 					return;
 				}
 
-				if (
-					result.code ===
-					authConfig.flashCodes.emailCodeRateLimited24Hours
-				) {
-					setError(
-						'Trop de codes de vérification ont été demandés par e-mail. Réessayez dans 24 heures.'
-					);
+				if (result.code === authConfig.flashCodes.emailCodeRateLimited24Hours) {
+					setError('Trop de codes de vérification ont été demandés par e-mail. Réessayez dans 24 heures.');
 
 					return;
 				}
 
-				if (
-					result.code ===
-					authConfig.flashCodes.authenticationFailed
-				) {
-					setError(
-						'La connexion n’a pas pu être finalisée. Veuillez réessayer.'
-					);
+				if (result.code === authConfig.flashCodes.authenticationFailed) {
+					setError('La connexion n’a pas pu être finalisée. Veuillez réessayer.');
 				}
 			} catch (error: unknown) {
 				console.error(JSON.stringify({
 					event: 'authentication_flash_consumption_failure',
-					errorName: error instanceof Error
-						? error.name
-						: 'UnknownError'
+					errorName: error instanceof Error ? error.name: 'UnknownError'
 				}));
 			}
 		};
@@ -117,9 +80,7 @@ const LoginView = () => {
 		void consumeFlashMessage();
 	}, []);
 
-	const handleSubmit = async (
-		event: React.FormEvent<HTMLFormElement>
-	): Promise<void> => {
+	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
 		event.preventDefault();
 
 		setPending(true);
@@ -129,10 +90,7 @@ const LoginView = () => {
 		const submittedEmail = formData.get('email');
 		const password = formData.get('password');
 
-		if (
-			typeof submittedEmail !== 'string' ||
-			typeof password !== 'string'
-		) {
+		if (typeof submittedEmail !== 'string' || typeof password !== 'string') {
 			setError('Le formulaire est invalide.');
 			setPending(false);
 
@@ -142,11 +100,7 @@ const LoginView = () => {
 		try {
 			await setPersistence(firebaseClient.auth, inMemoryPersistence);
 
-			const credential = await signInWithEmailAndPassword(
-				firebaseClient.auth,
-				submittedEmail,
-				password
-			);
+			const credential = await signInWithEmailAndPassword(firebaseClient.auth, submittedEmail, password);
 			const idToken = await credential.user.getIdToken(true);
 
 			const response = await fetch(
@@ -162,16 +116,8 @@ const LoginView = () => {
 
 			const result: unknown = await response.json();
 
-			if (
-				!response.ok ||
-				typeof result !== 'object' ||
-				result === null ||
-				!('authorizationUrl' in result) ||
-				typeof result.authorizationUrl !== 'string'
-			) {
-				setError(
-					'Impossible de démarrer la connexion.'
-				);
+			if (!response.ok || typeof result !== 'object' || result === null || !('authorizationUrl' in result) || typeof result.authorizationUrl !== 'string') {
+				setError('Impossible de démarrer la connexion.');
 				setPending(false);
 
 				return;
@@ -179,9 +125,7 @@ const LoginView = () => {
 
 			window.location.assign(result.authorizationUrl);
 		} catch {
-			setError(
-				'Adresse email ou mot de passe incorrect.'
-			);
+			setError('Adresse email ou mot de passe incorrect.');
 			setPending(false);
 		}
 	};
@@ -191,29 +135,89 @@ const LoginView = () => {
 		setError(null);
 
 		try {
-			const response = await fetch('/api/auth/passkey', {
-				method: 'POST'
+			const optionsResponse = await fetch('/api/auth/passkey', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: '{}'
 			});
-			const result: unknown = await response.json();
+			const issued: unknown = await optionsResponse.json();
 
-			if (
-				!response.ok ||
-				typeof result !== 'object' ||
-				result === null ||
-				!('authorizationUrl' in result) ||
-				typeof result.authorizationUrl !== 'string'
-			) {
-				setError(
-					'Aucune passkey utilisable n’a été trouvée pour ce compte.'
-				);
+			if (!optionsResponse.ok || !isRecord(issued) || typeof issued.ceremonyId !== 'string' || !isPasskeyOptions(issued.options)) {
+				setError('Aucune passkey utilisable n’a été trouvée pour ce compte.');
 				setPending(false);
 
 				return;
 			}
 
-			window.location.assign(result.authorizationUrl);
+			let assertion: AuthenticationResponseJSON;
+
+			try {
+				assertion = await startAuthentication({ optionsJSON: issued.options });
+			} catch (error: unknown) {
+				if (!authConfig.isDevelopment && error instanceof Error && error.name === 'SecurityError') {
+					const fallbackResponse = await fetch('/api/auth/passkey/fallback', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ ceremonyId: issued.ceremonyId })
+					});
+					const fallback: unknown = await fallbackResponse.json();
+
+					if (fallbackResponse.ok && isRecord(fallback) && typeof fallback.continuationUrl === 'string') {
+						window.location.assign(fallback.continuationUrl);
+
+						return;
+					}
+				}
+
+				const cancellationMessage = error instanceof Error && error.name === 'NotAllowedError' ? 'Connexion annulée.' : 'Impossible de vous connecter avec cette clé d’accès.';
+
+				setError(cancellationMessage);
+				setPending(false);
+
+				return;
+			}
+
+			const verificationResponse = await fetch('/api/auth/passkey/verify', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					ceremonyId: issued.ceremonyId,
+					response: assertion
+				})
+			});
+			const verification: unknown = await verificationResponse.json();
+
+			if (!verificationResponse.ok || !isRecord(verification) || typeof verification.customToken !== 'string') {
+				setError('Impossible de vous connecter avec cette clé d’accès.');
+				setPending(false);
+
+				return;
+			}
+
+			await setPersistence(firebaseClient.auth, inMemoryPersistence);
+
+			const credential = await signInWithCustomToken(firebaseClient.auth, verification.customToken);
+			const idToken = await credential.user.getIdToken(true);
+			const bindingResponse = await fetch('/api/auth/passkey/bind', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					ceremonyId: issued.ceremonyId,
+					idToken
+				})
+			});
+			const binding: unknown = await bindingResponse.json();
+
+			if (!bindingResponse.ok || !isRecord(binding) || typeof binding.continuationUrl !== 'string') {
+				setError('La connexion n’a pas pu être finalisée. Veuillez réessayer.');
+				setPending(false);
+
+				return;
+			}
+
+			window.location.assign(binding.continuationUrl);
 		} catch (caught: unknown) {
-			setError('Aucune passkey utilisable n’a été trouvée pour ce compte.');
+			setError('Impossible de vous connecter avec cette clé d’accès.');
 			setPending(false);
 		}
 	};

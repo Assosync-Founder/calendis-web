@@ -17,16 +17,12 @@ const createTicketHash = (ticket: string): string => {
 };
 
 /** Checks whether a value is a plain record. */
-const isRecord = (
-	value: unknown
-): value is Record<string, unknown> => {
+const isRecord = (value: unknown): value is Record<string, unknown> => {
 	return typeof value === 'object' && value !== null;
 };
 
 /** Checks whether a code can safely be stored in the product flash cookie. */
-const isSupportedFlashCode = (
-	value: string
-): boolean => {
+const isSupportedFlashCode = (value: string): boolean => {
 	return (
 		value === authConfig.flashCodes.passkeyAuthenticationCancelled ||
 		value === authConfig.flashCodes.passkeyAuthenticationFailed ||
@@ -39,23 +35,14 @@ const isSupportedFlashCode = (
 };
 
 /** Atomically consumes an Account-issued product flash ticket. */
-const consumeFlashTicket = async (
-	ticket: string
-): Promise<string | null> => {
+const consumeFlashTicket = async (ticket: string): Promise<string | null> => {
 	if (!FLASH_TICKET_PATTERN.test(ticket)) {
 		return null;
 	}
 
-	const value = await redis.getdel<unknown>(
-		`auth:web:flash:${createTicketHash(ticket)}`
-	);
+	const value = await redis.getdel<unknown>(`auth:web:flash:${createTicketHash(ticket)}`);
 
-	if (
-		!isRecord(value) ||
-		value.applicationId !== APPLICATION_ID ||
-		typeof value.flashCode !== 'string' ||
-		!isSupportedFlashCode(value.flashCode)
-	) {
+	if (!isRecord(value) || value.applicationId !== APPLICATION_ID || typeof value.flashCode !== 'string' || !isSupportedFlashCode(value.flashCode)) {
 		return null;
 	}
 
@@ -67,39 +54,26 @@ const consumeFlashTicket = async (
  * @param context - Dynamic route context containing the opaque ticket.
  * @returns Product login redirect, optionally containing a flash cookie.
  */
-export const GET = async (
-	request: NextRequest,
-	context: RouteContext<'/api/auth/flash/[ticket]'>
-): Promise<Response> => {
+export const GET = async (request: NextRequest, context: RouteContext<'/api/auth/flash/[ticket]'>): Promise<Response> => {
 	const parameters = await context.params;
 	const endpoints = resolveWebSsoEndpoints(request);
 
 	if (!endpoints) {
-		return NextResponse.json(
-			{ error: 'authentication_failed' },
-			{ status: 400 }
-		);
+		return NextResponse.json({ error: 'authentication_failed' }, { status: 400 });
 	}
 
 	try {
-		const flashCode = await consumeFlashTicket(
-			parameters.ticket
-		);
+		const flashCode = await consumeFlashTicket(parameters.ticket);
 
 		if (!flashCode) {
 			return redirectToLogin(endpoints.appUrl);
 		}
 
-		return createAuthenticationFailureResponse(
-			flashCode,
-			endpoints
-		);
+		return createAuthenticationFailureResponse(flashCode, endpoints);
 	} catch (error: unknown) {
 		console.error(JSON.stringify({
 			event: 'authentication_flash_ticket_consumption_failure',
-			errorName: error instanceof Error
-				? error.name
-				: 'UnknownError'
+			errorName: error instanceof Error ? error.name: 'UnknownError'
 		}));
 
 		return redirectToLogin(endpoints.appUrl);

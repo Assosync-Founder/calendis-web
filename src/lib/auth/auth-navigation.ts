@@ -6,12 +6,8 @@ import { NextResponse } from 'next/server';
  * @param requestHeaders - Incoming request headers.
  * @returns Whether the request expects an HTML document.
  */
-export const isDocumentRequest = (
-	requestHeaders: Headers
-): boolean => {
-	const destination = requestHeaders.get(
-		'Sec-Fetch-Dest'
-	);
+export const isDocumentRequest = (requestHeaders: Headers): boolean => {
+	const destination = requestHeaders.get('Sec-Fetch-Dest');
 
 	const accept = requestHeaders.get('Accept') ?? '';
 
@@ -25,11 +21,6 @@ export const isDocumentRequest = (
  * @param appUrl - Validated public product application URL.
  * @returns Product login redirect response.
  */
-export const redirectToLogin = (
-	appUrl: string
-): Response => {
-	return NextResponse.redirect(
-		new URL(`${appUrl}/login`),
-		303
-	);
+export const redirectToLogin = (appUrl: string): Response => {
+	return NextResponse.redirect(new URL(`${appUrl}/login`), 303);
 };

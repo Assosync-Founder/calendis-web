@@ -6,10 +6,7 @@ const isDevelopment = Env.public.environment === 'development';
 const isPreview = Env.public.environment === 'preview';
 const previewHostname = 'preview.calendis.fr';
 
-const resolveHostname = (
-	developmentHostname: string,
-	productionHostname: string
-): string => {
+const resolveHostname = (developmentHostname: string, productionHostname: string): string => {
 	if (isDevelopment) {
 		return developmentHostname;
 	}
@@ -21,11 +18,7 @@ const resolveHostname = (
 	return productionHostname;
 };
 
-const resolveUrl = (
-	developmentUrl: string,
-	previewUrl: string,
-	productionUrl: string
-): string => {
+const resolveUrl = (developmentUrl: string, previewUrl: string, productionUrl: string): string => {
 	if (isDevelopment) {
 		return developmentUrl;
 	}
@@ -46,26 +39,16 @@ const appPublicRoutes = [
 const proxyConfig = defineProxyConfig({
 	scopes: {
 		www: {
-			hostname: resolveHostname(
-				'www.localhost',
-				'www.calendis.fr'
-			),
+			hostname: resolveHostname('www.localhost', 'www.calendis.fr'),
 			rewritePrefix: '/www'
 		},
 
 		app: {
-			hostname: resolveHostname(
-				'app.localhost',
-				'app.calendis.fr'
-			),
+			hostname: resolveHostname('app.localhost', 'app.calendis.fr'),
 			rewritePrefix: '/app',
 			authentication: {
 				publicPaths: appPublicRoutes,
-				loginUrl: resolveUrl(
-					'http://app.localhost:3001/login',
-					'https://preview.calendis.fr/app/login',
-					'https://app.calendis.fr/login'
-				)
+				loginUrl: resolveUrl('http://app.localhost:3001/login', 'https://preview.calendis.fr/app/login', 'https://app.calendis.fr/login')
 			}
 		}
 	},

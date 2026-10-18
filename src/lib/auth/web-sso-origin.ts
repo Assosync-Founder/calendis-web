@@ -31,19 +31,15 @@ const resolveRequestOrigin = (request: Request): string | null => {
  * @param request - Incoming Calendis browser request.
  * @returns Endpoints matching the exact supported product origin, or null.
  */
-const resolveWebSsoEndpoints = (
-	request: Request
-): WebSsoEndpoints | null => {
+const resolveWebSsoEndpoints = (request: Request): WebSsoEndpoints | null => {
 	const appOrigin = resolveRequestOrigin(request);
 
 	if (!appOrigin) {
 		return null;
 	}
 
-	if (
-		Env.public.environment === 'preview' &&
-		appOrigin === 'https://preview.calendis.fr'
-	) {
+	if (Env.public.environment === 'preview' &&
+		appOrigin === 'https://preview.calendis.fr') {
 		return {
 			accountUrl: 'https://preview.assosync.fr',
 			appUrl: 'https://preview.calendis.fr/app',
@@ -56,11 +52,7 @@ const resolveWebSsoEndpoints = (
 		const accountUrl = Env.private.webSso.authAccountUrl;
 		const redirectUri = Env.private.webSso.authWebCalendisRedirectUri;
 
-		if (
-			!accountUrl ||
-			!redirectUri ||
-			new URL(redirectUri).origin !== appOrigin
-		) {
+		if (!accountUrl || !redirectUri || new URL(redirectUri).origin !== appOrigin) {
 			return null;
 		}
 

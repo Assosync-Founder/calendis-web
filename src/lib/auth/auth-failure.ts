@@ -22,33 +22,22 @@ const createHashValue = (value: string): string => {
  * @param endpoints - Validated endpoints for the current product origin.
  * @returns Redirect response without error query parameters.
  */
-const createAuthenticationFailureResponse = async (
-	flashCode: string,
-	endpoints: WebSsoEndpoints
-): Promise<Response> => {
+const createAuthenticationFailureResponse = async (flashCode: string, endpoints: WebSsoEndpoints): Promise<Response> => {
 	const cookieStore = await cookies();
-	const transactionId = cookieStore.get(
-		authCookieNames.webAuthorization
-	)?.value;
+	const transactionId = cookieStore.get(authCookieNames.webAuthorization)?.value;
 
 	if (transactionId) {
 		try {
-			await redis.del(
-				`auth:web:transactions:${createHashValue(transactionId)}`
-			);
+			await redis.del(`auth:web:transactions:${createHashValue(transactionId)}`);
 		} catch (error: unknown) {
 			console.error(JSON.stringify({
 				event: 'authentication_transaction_cleanup_failure',
-				errorName: error instanceof Error
-					? error.name
-					: 'UnknownError'
+				errorName: error instanceof Error ? error.name: 'UnknownError'
 			}));
 		}
 	}
 
-	const response = NextResponse.redirect(
-		new URL(`${endpoints.appUrl}/login`)
-	);
+	const response = NextResponse.redirect(new URL(`${endpoints.appUrl}/login`));
 
 	cookieStore.set({
 		name: authConfig.cookieNames.flash,

@@ -1,5 +1,6 @@
 /** Product authentication configuration shared by server and client modules. */
 const authConfig = {
+	isDevelopment: process.env.NEXT_PUBLIC_ENVIRONMENT === 'development',
 	cookieNames: {
 		flash: 'c_flh'
 	},

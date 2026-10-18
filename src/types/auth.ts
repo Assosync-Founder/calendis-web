@@ -1,3 +1,5 @@
+import type { PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/browser';
+
 /** Temporary Web authentication transaction. */
 export type WebAuthenticationTransaction = {
 	/** CSRF correlation value. */
@@ -11,6 +13,54 @@ export type WebAuthenticationTransaction = {
 
 	/** Internal destination after successful authentication. */
 	readonly returnTo: string;
+};
+
+/** Server-held transaction for a product-hosted passkey ceremony. */
+export type PasskeyAuthenticationTransaction = WebAuthenticationTransaction & {
+	/** Account authorization identifier. */
+	readonly authorizationId: string;
+
+	/** Secret that binds server-to-server passkey requests. */
+	readonly browserToken: string;
+
+	/** One-time WebAuthn challenge identifier. */
+	readonly challengeId: string;
+
+	/** Exact Calendis origin performing the ceremony. */
+	readonly passkeyOrigin: string;
+};
+
+/** Public passkey options returned to the Calendis browser. */
+export type PasskeyOptionsResponse = {
+	/** Opaque local ceremony identifier. */
+	readonly ceremonyId: string;
+
+	/** Browser-compatible WebAuthn request options. */
+	readonly options: PublicKeyCredentialRequestOptionsJSON;
+};
+
+/** Product-hosted passkey options paired with the server transaction identifier. */
+export type StartedPasskeyAuthorization = PasskeyOptionsResponse & {
+	/** Raw local transaction identifier stored in an HTTP-only cookie. */
+	readonly transactionId: string;
+};
+
+/** Confidential response returned by the Account passkey options endpoint. */
+export type AccountPasskeyOptionsResponse = {
+	/** Account authorization identifier retained by the Calendis server. */
+	readonly authorizationId: string;
+
+	/** Server-only authorization binding secret. */
+	readonly browserToken: string;
+
+	/** One-time WebAuthn challenge identifier. */
+	readonly challengeId: string;
+
+	/** Public WebAuthn request options. */
+	readonly options: PublicKeyCredentialRequestOptionsJSON;
+
+	/** ISO expiration time for the Account authorization. */
+	readonly expiresAt: string;
 };
 
 /** Trusted endpoints used for one Calendis Web SSO flow. */
